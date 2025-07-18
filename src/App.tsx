@@ -7,6 +7,10 @@ import { AuthProvider, useAuth } from "@/context/AuthContext";
 import { Layout } from "@/components/layout/Layout";
 import { Login } from "@/pages/Login";
 import { Dashboard } from "@/pages/Dashboard";
+import { Clients } from "@/pages/Clients";
+import { Cars } from "@/pages/Cars";
+import { Services } from "@/pages/Services";
+import { ServiceOrders } from "@/pages/ServiceOrders";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -48,11 +52,10 @@ const App = () => (
             >
               <Route index element={<Navigate to="/dashboard" replace />} />
               <Route path="dashboard" element={<Dashboard />} />
-              {/* Placeholder routes - will be implemented */}
-              <Route path="clients" element={<div className="p-8 text-center text-muted-foreground">Página de Clientes em desenvolvimento</div>} />
-              <Route path="cars" element={<div className="p-8 text-center text-muted-foreground">Página de Veículos em desenvolvimento</div>} />
-              <Route path="services" element={<div className="p-8 text-center text-muted-foreground">Página de Serviços em desenvolvimento</div>} />
-              <Route path="orders" element={<div className="p-8 text-center text-muted-foreground">Página de Ordens de Serviço em desenvolvimento</div>} />
+              <Route path="clients" element={<Clients />} />
+              <Route path="cars" element={<Cars />} />
+              <Route path="services" element={<Services />} />
+              <Route path="orders" element={<ServiceOrders />} />
             </Route>
             
             {/* Catch-all route */}
