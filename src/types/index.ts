@@ -31,12 +31,23 @@ export interface Car {
   updatedAt: string;
 }
 
+export interface Employee {
+  id: string;
+  name: string;
+  role: string;
+  phone?: string;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface Service {
   id: string;
   description: string;
   value: number;
   estimatedTime: number; // in hours
   category: string;
+  responsibleEmployeeId?: string;
   isActive: boolean;
   createdAt: string;
   updatedAt: string;

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Plus, Search, Edit, Trash2, Wrench, DollarSign, Clock } from 'lucide-react';
+import { Plus, Search, Edit, Trash2, Wrench, DollarSign, Clock, Users, User } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -9,19 +9,21 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
 import { useToast } from '@/hooks/use-toast';
-import { Service } from '@/types';
+import { Service, Employee } from '@/types';
 import { useLocalStorage } from '@/hooks/useLocalStorage';
 
-const ServiceForm = ({ service, onSave, onCancel }: {
+const ServiceForm = ({ service, onSave, onCancel, employees }: {
   service?: Service;
   onSave: (service: Omit<Service, 'id' | 'createdAt' | 'updatedAt'>) => void;
   onCancel: () => void;
+  employees: Employee[];
 }) => {
   const [formData, setFormData] = useState({
     description: service?.description || '',
     value: service?.value || 0,
     estimatedTime: service?.estimatedTime || 1,
     category: service?.category || 'Chapeação',
+    responsibleEmployeeId: service?.responsibleEmployeeId || '',
     isActive: service?.isActive ?? true
   });
 
@@ -86,19 +88,38 @@ const ServiceForm = ({ service, onSave, onCancel }: {
         </div>
       </div>
 
-      <div className="space-y-2">
-        <Label htmlFor="estimatedTime">Tempo Estimado (horas) *</Label>
-        <Input
-          id="estimatedTime"
-          type="number"
-          step="0.5"
-          min="0.5"
-          value={formData.estimatedTime}
-          onChange={(e) => setFormData({ ...formData, estimatedTime: parseFloat(e.target.value) || 1 })}
-          required
-          placeholder="1.0"
-        />
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="space-y-2">
+          <Label htmlFor="estimatedTime">Tempo Estimado (horas) *</Label>
+          <Input
+            id="estimatedTime"
+            type="number"
+            step="0.5"
+            min="0.5"
+            value={formData.estimatedTime}
+            onChange={(e) => setFormData({ ...formData, estimatedTime: parseFloat(e.target.value) || 1 })}
+            required
+            placeholder="1.0"
+          />
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="responsibleEmployee">Funcionário Responsável</Label>
+          <Select value={formData.responsibleEmployeeId} onValueChange={(value) => setFormData({ ...formData, responsibleEmployeeId: value })}>
+            <SelectTrigger>
+              <SelectValue placeholder="Selecione o funcionário" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="">Nenhum funcionário</SelectItem>
+              {employees.filter(emp => emp.isActive).map((employee) => (
+                <SelectItem key={employee.id} value={employee.id}>
+                  {employee.name} - {employee.role}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
       </div>
+
 
       <div className="flex items-center space-x-2">
         <Switch
@@ -121,12 +142,87 @@ const ServiceForm = ({ service, onSave, onCancel }: {
   );
 };
 
+const EmployeeForm = ({ employee, onSave, onCancel }: {
+  employee?: Employee;
+  onSave: (employee: Omit<Employee, 'id' | 'createdAt' | 'updatedAt'>) => void;
+  onCancel: () => void;
+}) => {
+  const [formData, setFormData] = useState({
+    name: employee?.name || '',
+    role: employee?.role || '',
+    phone: employee?.phone || '',
+    isActive: employee?.isActive ?? true
+  });
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    onSave(formData);
+  };
+
+  return (
+    <form onSubmit={handleSubmit} className="space-y-4">
+      <div className="space-y-2">
+        <Label htmlFor="employeeName">Nome do Funcionário *</Label>
+        <Input
+          id="employeeName"
+          value={formData.name}
+          onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+          required
+          placeholder="Digite o nome do funcionário"
+        />
+      </div>
+
+      <div className="space-y-2">
+        <Label htmlFor="employeeRole">Função/Especialidade *</Label>
+        <Input
+          id="employeeRole"
+          value={formData.role}
+          onChange={(e) => setFormData({ ...formData, role: e.target.value })}
+          required
+          placeholder="Ex: Chapeiro, Pintor, Funileiro..."
+        />
+      </div>
+
+      <div className="space-y-2">
+        <Label htmlFor="employeePhone">Telefone</Label>
+        <Input
+          id="employeePhone"
+          value={formData.phone}
+          onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+          placeholder="(00) 00000-0000"
+        />
+      </div>
+
+      <div className="flex items-center space-x-2">
+        <Switch
+          id="employeeActive"
+          checked={formData.isActive}
+          onCheckedChange={(checked) => setFormData({ ...formData, isActive: checked })}
+        />
+        <Label htmlFor="employeeActive">Funcionário ativo</Label>
+      </div>
+
+      <DialogFooter>
+        <Button type="button" variant="outline" onClick={onCancel}>
+          Cancelar
+        </Button>
+        <Button type="submit">
+          {employee ? 'Atualizar' : 'Cadastrar'}
+        </Button>
+      </DialogFooter>
+    </form>
+  );
+};
+
 export const Services = () => {
   const [services, setServices] = useLocalStorage<Service[]>('services', []);
+  const [employees, setEmployees] = useLocalStorage<Employee[]>('employees', []);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('');
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isEmployeeDialogOpen, setIsEmployeeDialogOpen] = useState(false);
   const [editingService, setEditingService] = useState<Service | undefined>();
+  const [editingEmployee, setEditingEmployee] = useState<Employee | undefined>();
   const { toast } = useToast();
 
   const categories = [
@@ -205,6 +301,63 @@ export const Services = () => {
     setEditingService(undefined);
   };
 
+  const handleEmployeeSave = (employeeData: Omit<Employee, 'id' | 'createdAt' | 'updatedAt'>) => {
+    const now = new Date().toISOString();
+    
+    if (editingEmployee) {
+      const updatedEmployees = employees.map(emp =>
+        emp.id === editingEmployee.id
+          ? { ...emp, ...employeeData, updatedAt: now }
+          : emp
+      );
+      setEmployees(updatedEmployees);
+      toast({
+        title: "Funcionário atualizado",
+        description: "Os dados do funcionário foram atualizados com sucesso."
+      });
+    } else {
+      const newEmployee: Employee = {
+        id: crypto.randomUUID(),
+        ...employeeData,
+        createdAt: now,
+        updatedAt: now
+      };
+      setEmployees([...employees, newEmployee]);
+      toast({
+        title: "Funcionário cadastrado",
+        description: "Novo funcionário foi cadastrado com sucesso."
+      });
+    }
+    
+    setIsEmployeeDialogOpen(false);
+    setEditingEmployee(undefined);
+  };
+
+  const handleEmployeeEdit = (employee: Employee) => {
+    setEditingEmployee(employee);
+    setIsEmployeeDialogOpen(true);
+  };
+
+  const handleEmployeeDelete = (employee: Employee) => {
+    if (confirm(`Tem certeza que deseja excluir o funcionário "${employee.name}"?`)) {
+      setEmployees(employees.filter(e => e.id !== employee.id));
+      toast({
+        title: "Funcionário excluído",
+        description: "Funcionário foi removido com sucesso."
+      });
+    }
+  };
+
+  const handleEmployeeCancel = () => {
+    setIsEmployeeDialogOpen(false);
+    setEditingEmployee(undefined);
+  };
+
+  const getEmployeeName = (employeeId?: string) => {
+    const employee = employees.find(emp => emp.id === employeeId);
+    return employee ? employee.name : 'Não atribuído';
+  };
+
   const toggleActive = (service: Service) => {
     const updatedServices = services.map(s =>
       s.id === service.id
@@ -225,37 +378,119 @@ export const Services = () => {
         <div>
           <h1 className="text-3xl font-bold text-foreground">Serviços</h1>
           <p className="text-muted-foreground">
-            Gerencie o catálogo de serviços da oficina
+            Gerencie o catálogo de serviços e funcionários da oficina
           </p>
         </div>
         
-        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-          <DialogTrigger asChild>
-            <Button onClick={() => setEditingService(undefined)}>
-              <Plus className="w-4 h-4 mr-2" />
-              Novo Serviço
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="sm:max-w-[600px]">
-            <DialogHeader>
-              <DialogTitle>
-                {editingService ? 'Editar Serviço' : 'Novo Serviço'}
-              </DialogTitle>
-              <DialogDescription>
-                {editingService 
-                  ? 'Atualize as informações do serviço.'
-                  : 'Cadastre um novo serviço no catálogo.'
-                }
-              </DialogDescription>
-            </DialogHeader>
-            <ServiceForm
-              service={editingService}
-              onSave={handleSave}
-              onCancel={handleCancel}
-            />
-          </DialogContent>
-        </Dialog>
+        <div className="flex gap-2">
+          <Dialog open={isEmployeeDialogOpen} onOpenChange={setIsEmployeeDialogOpen}>
+            <DialogTrigger asChild>
+              <Button variant="outline" onClick={() => setEditingEmployee(undefined)}>
+                <Users className="w-4 h-4 mr-2" />
+                Funcionários
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-[500px]">
+              <DialogHeader>
+                <DialogTitle>
+                  {editingEmployee ? 'Editar Funcionário' : 'Novo Funcionário'}
+                </DialogTitle>
+                <DialogDescription>
+                  {editingEmployee 
+                    ? 'Atualize as informações do funcionário.'
+                    : 'Cadastre um novo funcionário responsável por serviços.'
+                  }
+                </DialogDescription>
+              </DialogHeader>
+              <EmployeeForm
+                employee={editingEmployee}
+                onSave={handleEmployeeSave}
+                onCancel={handleEmployeeCancel}
+              />
+            </DialogContent>
+          </Dialog>
+
+          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+            <DialogTrigger asChild>
+              <Button onClick={() => setEditingService(undefined)}>
+                <Plus className="w-4 h-4 mr-2" />
+                Novo Serviço
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-[600px]">
+              <DialogHeader>
+                <DialogTitle>
+                  {editingService ? 'Editar Serviço' : 'Novo Serviço'}
+                </DialogTitle>
+                <DialogDescription>
+                  {editingService 
+                    ? 'Atualize as informações do serviço.'
+                    : 'Cadastre um novo serviço no catálogo.'
+                  }
+                </DialogDescription>
+              </DialogHeader>
+              <ServiceForm
+                service={editingService}
+                employees={employees}
+                onSave={handleSave}
+                onCancel={handleCancel}
+              />
+            </DialogContent>
+          </Dialog>
+        </div>
       </div>
+
+      {/* Employees Section */}
+      {employees.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center">
+              <Users className="w-5 h-5 mr-2" />
+              Funcionários ({employees.filter(e => e.isActive).length} ativos)
+            </CardTitle>
+            <CardDescription>
+              Lista de funcionários responsáveis pelos serviços
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="grid gap-2 max-h-48 overflow-y-auto">
+              {employees.map((employee) => (
+                <div key={employee.id} className={`flex items-center justify-between p-3 rounded-lg border ${!employee.isActive ? 'opacity-60' : ''}`}>
+                  <div className="flex items-center space-x-3">
+                    <User className="w-4 h-4 text-muted-foreground" />
+                    <div>
+                      <p className="font-medium">{employee.name}</p>
+                      <p className="text-sm text-muted-foreground">{employee.role}</p>
+                    </div>
+                    {!employee.isActive && (
+                      <span className="px-2 py-1 bg-muted text-muted-foreground text-xs rounded-full">
+                        Inativo
+                      </span>
+                    )}
+                  </div>
+                  <div className="flex space-x-1">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => handleEmployeeEdit(employee)}
+                    >
+                      <Edit className="w-3 h-3" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => handleEmployeeDelete(employee)}
+                      className="text-destructive hover:text-destructive"
+                    >
+                      <Trash2 className="w-3 h-3" />
+                    </Button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Filters */}
       <div className="flex flex-col sm:flex-row gap-4">
@@ -380,6 +615,12 @@ export const Services = () => {
                         <Clock className="w-4 h-4 mr-1" />
                         {service.estimatedTime}h
                       </div>
+                      {service.responsibleEmployeeId && (
+                        <div className="flex items-center">
+                          <User className="w-4 h-4 mr-1" />
+                          {getEmployeeName(service.responsibleEmployeeId)}
+                        </div>
+                      )}
                     </div>
                   </div>
                   <div className="flex space-x-2">
