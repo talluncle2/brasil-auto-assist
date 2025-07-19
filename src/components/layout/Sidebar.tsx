@@ -4,7 +4,8 @@ import {
   Wrench, 
   FileText, 
   LayoutDashboard, 
-  LogOut 
+  LogOut,
+  Shield
 } from 'lucide-react';
 import { NavLink } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
@@ -36,6 +37,11 @@ const navigation = [
     name: 'Ordens de Serviço',
     href: '/orders',
     icon: FileText
+  },
+  {
+    name: 'Administração',
+    href: '/admin',
+    icon: Shield
   }
 ];
 

@@ -11,6 +11,7 @@ import { Clients } from "@/pages/Clients";
 import { Cars } from "@/pages/Cars";
 import { Services } from "@/pages/Services";
 import { ServiceOrders } from "@/pages/ServiceOrders";
+import { Admin } from "@/pages/Admin";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -56,6 +57,7 @@ const App = () => (
               <Route path="cars" element={<Cars />} />
               <Route path="services" element={<Services />} />
               <Route path="orders" element={<ServiceOrders />} />
+              <Route path="admin" element={<Admin />} />
             </Route>
             
             {/* Catch-all route */}
